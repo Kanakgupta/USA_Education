@@ -493,7 +493,7 @@ const conceptQuestionBank = {
   }
 };
 
-let state = { subject: 'math', schoolStage: 'elementary', grade: 4, chapter: null, concept: null, question: 0, attempts: 0, answers: {}, wrongChoices: {}, processingAnswer: false, sparks: Number(localStorage.getItem('numberQuestSparks') || 0), started: JSON.parse(localStorage.getItem('numberQuestStarted') || '[]'), completedConcepts: JSON.parse(localStorage.getItem('numberQuestCompletedConcepts') || '[]'), sectionRewards: JSON.parse(localStorage.getItem('numberQuestSectionRewards') || '{}'), trophies: JSON.parse(localStorage.getItem('numberQuestTrophies') || '[]') };
+let state = { subject: 'math', grade: 4, chapter: null, concept: null, question: 0, attempts: 0, answers: {}, wrongChoices: {}, processingAnswer: false, sparks: Number(localStorage.getItem('numberQuestSparks') || 0), started: JSON.parse(localStorage.getItem('numberQuestStarted') || '[]'), completedConcepts: JSON.parse(localStorage.getItem('numberQuestCompletedConcepts') || '[]'), sectionRewards: JSON.parse(localStorage.getItem('numberQuestSectionRewards') || '{}'), trophies: JSON.parse(localStorage.getItem('numberQuestTrophies') || '[]') };
 const $ = selector => document.querySelector(selector);
 function save() { localStorage.setItem('numberQuestSparks', state.sparks); localStorage.setItem('numberQuestStarted', JSON.stringify(state.started)); localStorage.setItem('numberQuestCompletedConcepts', JSON.stringify(state.completedConcepts)); localStorage.setItem('numberQuestSectionRewards', JSON.stringify(state.sectionRewards)); localStorage.setItem('numberQuestTrophies', JSON.stringify(state.trophies)); }
 const subjects = [
@@ -502,12 +502,11 @@ const subjects = [
   { id: 'ela', name: 'Reading & Writing', symbol: '✎', blurb: 'Stories, words, and clear ideas', grades: [4, 5] },
   { id: 'social', name: 'Social Studies', symbol: '◍', blurb: 'People, places, regions, and history', grades: [4, 5] }
 ];
-const SCHOOL_STAGES = Object.freeze({ elementary: { label: 'Elementary', grades: [1, 2, 3, 4, 5] }, middle: { label: 'Middle', grades: [6, 7, 8] }, high: { label: 'High School', grades: [] } });
+const ALL_GRADES = ['K', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const subjectContent = { math: course, ela: readingCourse, social: socialCourse };
 function subjectById(id) { return subjects.find(item => item.id === id); }
 function chaptersFor(subject, grade) { const content = subjectContent[subject]; return content && content[grade] ? content[grade].chapters : null; }
-function gradeLabel(grade) { return grade == null ? '' : `Grade ${grade}`; }
-function currentSchoolStage() { return SCHOOL_STAGES[state.schoolStage]; }
+function gradeLabel(grade) { return grade == null ? '' : grade === 'K' ? 'Kindergarten' : `Grade ${grade}`; }
 function currentChapter() { return chaptersFor(state.subject, state.grade)[state.chapter]; }
 function isReading() { return state.subject === 'ela'; }
 function isSocial() { return state.subject === 'social'; }
@@ -566,23 +565,11 @@ function isConceptComplete(index) { return state.completedConcepts.includes(`${s
 function answerMarkup(question, complete) { return `<div class="answer-list">${question.options.sort(() => Math.random() - .5).map(answer => `<button class="answer-button" data-answer="${answer}" ${complete ? 'disabled' : ''}>${answer}</button>`).join('')}</div>`; }
 function subjectHasContent(id, grade) { return !!chaptersFor(id, grade); }
 function gradeHasContent(grade) { return subjects.some(subject => chaptersFor(subject.id, grade)); }
-function renderSchoolStages() {
-  $('#schoolStageNav').innerHTML = Object.entries(SCHOOL_STAGES).map(([id, stage]) => `<button class="school-stage-button ${id === state.schoolStage ? 'active' : ''} ${id === 'high' ? 'soon' : ''}" type="button" data-school-stage="${id}" aria-pressed="${id === state.schoolStage}" ${id === 'high' ? 'aria-label="High School, coming soon"' : ''}>${stage.label}${id === 'high' ? '<small>Coming soon</small>' : ''}</button>`).join('');
-  document.querySelectorAll('[data-school-stage]').forEach(button => button.addEventListener('click', () => {
-    const stage = SCHOOL_STAGES[button.dataset.schoolStage];
-    state.schoolStage = button.dataset.schoolStage;
-    state.grade = stage.grades.find(gradeHasContent) || stage.grades[0] || null;
-    resetToChapters(); renderSchoolStages(); renderGradeRail(); renderSubjectTabs(); renderChapters();
-  }));
-}
 function renderGradeRail() {
-  const gradeBlock = $('#gradeBlock');
-  const grades = currentSchoolStage().grades;
-  gradeBlock.hidden = !grades.length;
-  $('#gradeRail').innerHTML = grades.map(grade => { const active = gradeHasContent(grade); return `<button class="grade-chip ${grade === state.grade ? 'active' : ''} ${active ? '' : 'soon'}" data-grade="${grade}" ${active ? '' : 'disabled'}>Gr ${grade}</button>`; }).join('');
+  $('#gradeRail').innerHTML = ALL_GRADES.map(grade => { const active = gradeHasContent(grade); return `<button class="grade-chip ${grade === state.grade ? 'active' : ''} ${active ? '' : 'soon'}" data-grade="${grade}" ${active ? '' : 'disabled'}>${grade === 'K' ? 'K' : 'Gr ' + grade}</button>`; }).join('');
   document.querySelectorAll('[data-grade]').forEach(button => button.addEventListener('click', () => {
     if (button.disabled) return;
-    state.grade = Number(button.dataset.grade);
+    state.grade = button.dataset.grade === 'K' ? 'K' : Number(button.dataset.grade);
     if (!subjectHasContent(state.subject, state.grade)) state.subject = (subjects.find(subject => chaptersFor(subject.id, state.grade)) || {}).id || null;
     resetToChapters(); renderGradeRail(); renderSubjectTabs(); renderChapters();
   }));
@@ -806,5 +793,21 @@ window.NumberQuestTestAPI = Object.freeze({
   forceReadingImageLoad,
   socialQuestionsFor
 });
-$('#schoolButton').addEventListener('click', () => $('#schoolStageNav').scrollIntoView({ behavior: 'smooth', block: 'center' }));
-$('#sparkCount').textContent = `${state.sparks} sparks`; renderSchoolStages(); renderSubjectTabs(); renderGradeRail(); renderChapters();
+const schoolButton = $('#schoolButton');
+const schoolMenu = $('#schoolMenu');
+schoolButton.addEventListener('click', () => {
+  const open = schoolMenu.hidden;
+  schoolMenu.hidden = !open;
+  schoolButton.setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', event => {
+  if (event.target.closest('.school-menu')) return;
+  schoolMenu.hidden = true;
+  schoolButton.setAttribute('aria-expanded', 'false');
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  schoolMenu.hidden = true;
+  schoolButton.setAttribute('aria-expanded', 'false');
+});
+$('#sparkCount').textContent = `${state.sparks} sparks`; renderSubjectTabs(); renderGradeRail(); renderChapters();

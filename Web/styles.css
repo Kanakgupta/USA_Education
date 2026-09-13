@@ -14,12 +14,12 @@ button { font:inherit; cursor:pointer; }
 .education-button:not(:disabled):active { transform:translateY(1px); box-shadow:0 2px 0 var(--ink); }
 .education-button.soon { cursor:not-allowed; opacity:.45; }
 .education-button span { display:block; margin-top:2px; font-size:8px; font-weight:400; }
-.school-stage-tabs { display:flex; flex-wrap:wrap; gap:8px; }
-.school-stage-button { min-width:132px; padding:10px 15px; border:1px solid var(--line); border-radius:6px; background:var(--white); color:var(--muted); font:700 13px Arial,sans-serif; box-shadow:0 3px 0 rgba(23,48,66,.24); transform:translateY(-1px); transition:transform .15s,box-shadow .15s,border-color .15s; }
-.school-stage-button.active { border-color:var(--ink); background:var(--lime); color:var(--ink); box-shadow:0 4px 0 var(--ink); }
-.school-stage-button:not(.active):not(:disabled):hover { border-color:var(--ink); transform:translateY(-2px); box-shadow:0 5px 0 var(--ink); }
-.school-stage-button.soon { cursor:not-allowed; opacity:.48; }
-.school-stage-button small { display:block; margin-top:2px; font-size:9px; font-weight:400; }
+.school-menu { position:relative; }
+.school-menu-panel { position:absolute; z-index:10; top:calc(100% + 9px); left:50%; display:grid; min-width:164px; padding:6px; border:1px solid var(--ink); border-radius:7px; background:var(--white); box-shadow:4px 5px 0 var(--ink); transform:translateX(-50%); }
+.school-menu-panel[hidden] { display:none; }
+.school-menu-item { padding:10px 12px; border-radius:4px; color:var(--ink); text-decoration:none; font:700 12px Arial,sans-serif; white-space:nowrap; }
+.school-menu-item:hover,.school-menu-item:focus-visible { background:var(--lime); outline:none; }
+.school-menu-item.active { background:var(--lime); }
 .topbar-right { display:flex; align-items:center; gap:13px; font-family:Arial,sans-serif; }
 .spark-count { padding:8px 11px; background:var(--white); border:1px solid var(--line); border-radius:6px; color:var(--teal); font-size:13px; font-weight:700; }
 .icon-button { width:35px; height:35px; border:1px solid var(--line); border-radius:6px; background:var(--white); color:var(--ink); font-size:21px; }
