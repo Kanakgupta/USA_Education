@@ -14,7 +14,7 @@
         <span>Number Quest</span>
       </a>
       <nav class="education-nav" aria-label="Education level">
-        <button class="education-button active" type="button" aria-pressed="true">School</button>
+        <button class="education-button active" id="schoolButton" type="button" aria-pressed="true" aria-controls="schoolStageNav">School</button>
         <button class="education-button soon" type="button" disabled aria-label="College, coming soon">College<span>Coming soon</span></button>
         <button class="education-button soon" type="button" disabled aria-label="Competition, coming soon">Competition<span>Coming soon</span></button>
       </nav>
@@ -43,11 +43,15 @@
 
       <section class="subject-nav" aria-label="Grade and subject">
         <div class="nav-block">
-          <p class="nav-label"><span class="step-dot">1</span> Choose your grade</p>
+          <p class="nav-label"><span class="step-dot">1</span> Choose your school stage</p>
+          <div class="school-stage-tabs" id="schoolStageNav" role="group" aria-label="Choose school stage"></div>
+        </div>
+        <div class="nav-block" id="gradeBlock">
+          <p class="nav-label"><span class="step-dot">2</span> Choose your grade</p>
           <div class="grade-rail" id="gradeRail" role="group" aria-label="Choose grade"></div>
         </div>
         <div class="nav-block">
-          <p class="nav-label"><span class="step-dot">2</span> Choose a subject</p>
+          <p class="nav-label"><span class="step-dot">3</span> Choose a subject</p>
           <div class="subject-tabs" id="subjectTabs" role="group" aria-label="Choose subject"></div>
         </div>
       </section>
