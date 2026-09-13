@@ -1,4 +1,4 @@
-# USA_Education
+# USA Edication assistant
 
 Interactive, visual math practice for elementary students.
 
