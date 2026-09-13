@@ -8,8 +8,10 @@ button { font:inherit; cursor:pointer; }
 .brand { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink); font:700 21px/1 Arial, sans-serif; letter-spacing:0; }
 .brand-mark { display:grid; place-items:center; width:37px; height:37px; border:2px solid var(--ink); border-radius:10px 4px 10px 4px; background:var(--lime); font-size:13px; transform:rotate(-5deg); }
 .education-nav { display:flex; align-items:center; gap:5px; padding:4px; border:1px solid var(--line); border-radius:8px; background:var(--white); font-family:Arial,sans-serif; }
-.education-button { min-height:32px; padding:7px 10px; border:0; border-radius:5px; background:transparent; color:var(--muted); font:700 12px Arial,sans-serif; }
-.education-button.active { color:var(--ink); background:var(--lime); }
+.education-button { min-height:32px; padding:7px 10px; border:1px solid var(--line); border-radius:5px; background:var(--white); color:var(--muted); font:700 12px Arial,sans-serif; box-shadow:0 3px 0 rgba(23,48,66,.28); transform:translateY(-1px); transition:transform .15s,box-shadow .15s,border-color .15s; }
+.education-button.active { border-color:var(--ink); color:var(--ink); background:var(--lime); box-shadow:0 4px 0 var(--ink); }
+.education-button:not(:disabled):hover { border-color:var(--ink); transform:translateY(-2px); box-shadow:0 5px 0 var(--ink); }
+.education-button:not(:disabled):active { transform:translateY(1px); box-shadow:0 2px 0 var(--ink); }
 .education-button.soon { cursor:not-allowed; opacity:.45; }
 .education-button span { display:block; margin-top:2px; font-size:8px; font-weight:400; }
 .topbar-right { display:flex; align-items:center; gap:13px; font-family:Arial,sans-serif; }
