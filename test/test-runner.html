@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Number Quest Content Tests</title>
+  <style>
+    body { margin: 2rem; background: #f8f7ef; color: #173042; font: 16px Arial, sans-serif; }
+    #result { white-space: pre-wrap; line-height: 1.5; }
+    .pass { color: #007c91; }
+    .fail { color: #b33d2e; }
+    iframe { width: 1px; height: 1px; border: 0; position: absolute; }
+  </style>
+</head>
+<body>
+  <h1>Number Quest Content Tests</h1>
+  <div id="result">Loading test app...</div>
+  <iframe id="app" src="../Web/index.html" title="Test app"></iframe>
+  <script src="test-suite.js"></script>
+  <script>
+    const result = document.getElementById('result');
+    const app = document.getElementById('app');
+    app.addEventListener('load', async () => {
+      try {
+        const report = window.runNumberQuestTests(app.contentWindow.NumberQuestTestAPI);
+        const uiReport = await window.runNumberQuestUiFlowTest(app);
+        result.className = 'pass';
+        result.textContent = `PASS: ${report.passed} concept missions validated.\n${uiReport}\n${report.results.join('\n')}`;
+      } catch (error) {
+        result.className = 'fail';
+        result.textContent = `FAIL: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
