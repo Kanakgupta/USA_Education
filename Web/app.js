@@ -517,6 +517,14 @@ const AP_CATALOG = [
 function renderApCatalog() {
   $('#apGrid').innerHTML = AP_CATALOG.map(group => `<div class="ap-group"><h3 class="ap-group-title">${group.subject}</h3><ul class="ap-course-list">${group.courses.map(course => `<li class="ap-course-chip">${course}</li>`).join('')}</ul></div>`).join('');
 }
+// Source: Fremont Unified School District comprehensive high school course catalog (fremontusd.com/catalog-images/fusd-hs-catalog.html)
+const STEM_CATALOG = [
+  { subject: 'Mathematics', courses: ['Algebra 1', 'Geometry', 'Algebra 2', 'Algebra 2/Trigonometry', 'PreCalculus', 'Calculus', 'Linear Algebra', 'Multivariable Calculus'] },
+  { subject: 'Science', courses: ['Biology', 'Marine Biology', 'Chemistry', 'Physics', 'Physics in the Universe'] }
+];
+function renderStemCatalog() {
+  $('#stemGrid').innerHTML = STEM_CATALOG.map(group => `<div class="ap-group"><h3 class="ap-group-title">${group.subject}</h3><ul class="ap-course-list">${group.courses.map(course => `<li class="ap-course-chip">${course}</li>`).join('')}</ul></div>`).join('');
+}
 function currentGradeRange() { return GRADE_RANGES[state.schoolLevel] || GRADE_RANGES.elementary; }
 const subjectContent = { math: course, ela: readingCourse, social: socialCourse };
 function subjectById(id) { return subjects.find(item => item.id === id); }
@@ -825,6 +833,7 @@ function selectSchoolLevel(level) {
   $('#apSection').hidden = !isHigh;
   if (isHigh) {
     renderApCatalog();
+    renderStemCatalog();
   } else {
     const range = currentGradeRange();
     if (!range.includes(state.grade)) state.grade = range.find(grade => gradeHasContent(grade)) || range[0];
