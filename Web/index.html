@@ -17,9 +17,9 @@
         <div class="school-menu">
           <button class="education-button active" id="schoolButton" type="button" aria-pressed="true" aria-expanded="false" aria-controls="schoolMenu">School</button>
           <div class="school-menu-panel" id="schoolMenu" hidden>
-            <a class="school-menu-item active" href="index.html" aria-current="page">Elementary</a>
-            <a class="school-menu-item" href="middle-school.html">Middle School</a>
-            <a class="school-menu-item" href="high-school.html">High School</a>
+            <a class="school-menu-item active" href="index.html" aria-current="page" data-school="elementary">Elementary</a>
+            <a class="school-menu-item" href="index.html" data-school="middle">Middle School</a>
+            <a class="school-menu-item" href="index.html" data-school="high">High School</a>
           </div>
         </div>
         <button class="education-button soon" type="button" disabled aria-label="College, coming soon">College<span>Coming soon</span></button>
@@ -48,7 +48,7 @@
         </div>
       </section>
 
-      <section class="subject-nav" aria-label="Grade and subject">
+      <section class="subject-nav" id="subjectNav" aria-label="Grade and subject">
         <div class="nav-block">
           <p class="nav-label"><span class="step-dot">1</span> Choose your grade</p>
           <div class="grade-rail" id="gradeRail" role="group" aria-label="Choose grade"></div>
@@ -59,7 +59,7 @@
         </div>
       </section>
 
-      <section class="chapter-section">
+      <section class="chapter-section" id="chapterSection">
         <div class="section-heading"><div><p class="eyebrow">Choose a mission</p><h2 id="chapterHeading">Chapter map</h2></div><span id="chapterProgress" class="progress-note"></span></div>
         <div id="chapterGrid" class="chapter-grid"></div>
       </section>
@@ -67,6 +67,12 @@
       <section class="playground" id="playground" aria-live="polite">
         <div class="empty-state" id="emptyState"><div class="empty-symbol">?</div><h2>Pick a chapter to begin</h2><p>Each chapter starts with a mini lesson. Then you take on short math challenges one at a time.</p></div>
         <div id="lessonView" hidden></div>
+      </section>
+
+      <section class="ap-section" id="apSection" aria-label="Advanced Placement course catalog" hidden>
+        <div class="section-heading"><div><p class="eyebrow">High School</p><h2>AP Course Catalog</h2></div></div>
+        <p class="ap-source">Advanced Placement subjects offered across Fremont Unified School District comprehensive high schools.</p>
+        <div id="apGrid" class="ap-grid"></div>
       </section>
     </main>
   </div>

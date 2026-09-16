@@ -493,7 +493,7 @@ const conceptQuestionBank = {
   }
 };
 
-let state = { subject: 'math', grade: 4, chapter: null, concept: null, question: 0, attempts: 0, answers: {}, wrongChoices: {}, processingAnswer: false, sparks: Number(localStorage.getItem('numberQuestSparks') || 0), started: JSON.parse(localStorage.getItem('numberQuestStarted') || '[]'), completedConcepts: JSON.parse(localStorage.getItem('numberQuestCompletedConcepts') || '[]'), sectionRewards: JSON.parse(localStorage.getItem('numberQuestSectionRewards') || '{}'), trophies: JSON.parse(localStorage.getItem('numberQuestTrophies') || '[]') };
+let state = { subject: 'math', grade: 4, schoolLevel: 'elementary', chapter: null, concept: null, question: 0, attempts: 0, answers: {}, wrongChoices: {}, processingAnswer: false, sparks: Number(localStorage.getItem('numberQuestSparks') || 0), started: JSON.parse(localStorage.getItem('numberQuestStarted') || '[]'), completedConcepts: JSON.parse(localStorage.getItem('numberQuestCompletedConcepts') || '[]'), sectionRewards: JSON.parse(localStorage.getItem('numberQuestSectionRewards') || '{}'), trophies: JSON.parse(localStorage.getItem('numberQuestTrophies') || '[]') };
 const $ = selector => document.querySelector(selector);
 function save() { localStorage.setItem('numberQuestSparks', state.sparks); localStorage.setItem('numberQuestStarted', JSON.stringify(state.started)); localStorage.setItem('numberQuestCompletedConcepts', JSON.stringify(state.completedConcepts)); localStorage.setItem('numberQuestSectionRewards', JSON.stringify(state.sectionRewards)); localStorage.setItem('numberQuestTrophies', JSON.stringify(state.trophies)); }
 const subjects = [
@@ -502,7 +502,22 @@ const subjects = [
   { id: 'ela', name: 'Reading & Writing', symbol: '✎', blurb: 'Stories, words, and clear ideas', grades: [4, 5] },
   { id: 'social', name: 'Social Studies', symbol: '◍', blurb: 'People, places, regions, and history', grades: [4, 5] }
 ];
-const ALL_GRADES = ['K', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const GRADE_RANGES = { elementary: [1, 2, 3, 4, 5], middle: [6, 7, 8] };
+// Source: Fremont Unified School District comprehensive high school course catalog (fremontusd.com/catalog-images/fusd-hs-catalog.html)
+const AP_CATALOG = [
+  { subject: 'English', courses: ['AP English Language and Composition', 'AP English Literature and Composition'] },
+  { subject: 'Mathematics', courses: ['AP Calculus AB', 'AP Calculus BC', 'AP Statistics'] },
+  { subject: 'Computer Science', courses: ['AP Computer Science A', 'AP Computer Science Principles', 'AP Cybersecurity'] },
+  { subject: 'Science', courses: ['AP Biology', 'AP Chemistry', 'AP Physics 1', 'AP Physics 2', 'AP Physics C', 'AP Environmental Science'] },
+  { subject: 'Social Studies', courses: ['AP World History', 'AP U.S. History', 'AP American Government', 'AP Economics', 'AP Human Geography', 'AP Psychology'] },
+  { subject: 'World Languages', courses: ['AP Spanish Language and Culture', 'AP Spanish Literature and Culture', 'AP French Language and Culture', 'AP Chinese Language and Culture'] },
+  { subject: 'Visual & Performing Arts', courses: ['AP Music Theory', 'AP 2-D Art and Design', 'AP Drawing', 'AP 3-D Art and Design', 'AP Art History'] },
+  { subject: 'Capstone', courses: ['AP Seminar'] }
+];
+function renderApCatalog() {
+  $('#apGrid').innerHTML = AP_CATALOG.map(group => `<div class="ap-group"><h3 class="ap-group-title">${group.subject}</h3><ul class="ap-course-list">${group.courses.map(course => `<li class="ap-course-chip">${course}</li>`).join('')}</ul></div>`).join('');
+}
+function currentGradeRange() { return GRADE_RANGES[state.schoolLevel] || GRADE_RANGES.elementary; }
 const subjectContent = { math: course, ela: readingCourse, social: socialCourse };
 function subjectById(id) { return subjects.find(item => item.id === id); }
 function chaptersFor(subject, grade) { const content = subjectContent[subject]; return content && content[grade] ? content[grade].chapters : null; }
@@ -566,11 +581,11 @@ function answerMarkup(question, complete) { return `<div class="answer-list">${q
 function subjectHasContent(id, grade) { return !!chaptersFor(id, grade); }
 function gradeHasContent(grade) { return subjects.some(subject => chaptersFor(subject.id, grade)); }
 function renderGradeRail() {
-  $('#gradeRail').innerHTML = ALL_GRADES.map(grade => { const active = gradeHasContent(grade); return `<button class="grade-chip ${grade === state.grade ? 'active' : ''} ${active ? '' : 'soon'}" data-grade="${grade}" ${active ? '' : 'disabled'}>${grade === 'K' ? 'K' : 'Gr ' + grade}</button>`; }).join('');
+  $('#gradeRail').innerHTML = currentGradeRange().map(grade => { const active = gradeHasContent(grade); return `<button class="grade-chip ${grade === state.grade ? 'active' : ''} ${active ? '' : 'soon'}" data-grade="${grade}" ${active ? '' : 'disabled'}>${grade === 'K' ? 'K' : 'Gr ' + grade}</button>`; }).join('');
   document.querySelectorAll('[data-grade]').forEach(button => button.addEventListener('click', () => {
     if (button.disabled) return;
     state.grade = button.dataset.grade === 'K' ? 'K' : Number(button.dataset.grade);
-    if (!subjectHasContent(state.subject, state.grade)) state.subject = (subjects.find(subject => chaptersFor(subject.id, state.grade)) || {}).id || null;
+    if (!subjectHasContent(state.subject, state.grade)) state.subject = (subjects.find(subject => chaptersFor(subject.id, state.grade)) || {}).id || subjects[0].id;
     resetToChapters(); renderGradeRail(); renderSubjectTabs(); renderChapters();
   }));
 }
@@ -800,6 +815,29 @@ schoolButton.addEventListener('click', () => {
   schoolMenu.hidden = !open;
   schoolButton.setAttribute('aria-expanded', String(open));
 });
+function selectSchoolLevel(level) {
+  state.schoolLevel = level;
+  document.querySelectorAll('[data-school]').forEach(item => item.classList.toggle('active', item.dataset.school === level));
+  const isHigh = level === 'high';
+  $('#subjectNav').hidden = isHigh;
+  $('#chapterSection').hidden = isHigh;
+  $('#playground').hidden = isHigh;
+  $('#apSection').hidden = !isHigh;
+  if (isHigh) {
+    renderApCatalog();
+  } else {
+    const range = currentGradeRange();
+    if (!range.includes(state.grade)) state.grade = range.find(grade => gradeHasContent(grade)) || range[0];
+    if (!subjectHasContent(state.subject, state.grade)) state.subject = (subjects.find(subject => chaptersFor(subject.id, state.grade)) || {}).id || subjects[0].id;
+    resetToChapters(); renderGradeRail(); renderSubjectTabs(); renderChapters();
+  }
+  schoolMenu.hidden = true;
+  schoolButton.setAttribute('aria-expanded', 'false');
+}
+document.querySelectorAll('[data-school]').forEach(item => item.addEventListener('click', event => {
+  event.preventDefault();
+  selectSchoolLevel(item.dataset.school);
+}));
 document.addEventListener('click', event => {
   if (event.target.closest('.school-menu')) return;
   schoolMenu.hidden = true;
