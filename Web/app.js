@@ -840,7 +840,7 @@ function checkAnswer(button, question) {
   state.processingAnswer = true;
   const right = question.correct;
   if (button.dataset.answer === right) {
-    button.classList.add('correct'); document.querySelectorAll('[data-answer]').forEach(answer => answer.disabled = true); state.sparks += 1; state.answers[state.question]='correct'; save(); $('#sparkCount').textContent = `${state.sparks} sparks`; $('#feedback').innerHTML = `<span class="cheer">${celebrate()}</span>`; if (Object.keys(state.answers).length === currentQuestions().length) setTimeout(showResults, 700); return;
+    button.classList.add('correct'); document.querySelectorAll('[data-answer]').forEach(answer => answer.disabled = true); state.sparks += 1; state.answers[state.question]='correct'; save(); $('#feedback').innerHTML = `<span class="cheer">${celebrate()}</span>`; if (Object.keys(state.answers).length === currentQuestions().length) setTimeout(showResults, 700); return;
   }
   const wrongAnswer = button.dataset.answer;
   const wrongChoices = state.wrongChoices[state.question] || [];
@@ -860,7 +860,6 @@ function renderRewards() { const counts = ['Diamond','Gold','Silver','Bronze'].m
 $('#tryAgain').addEventListener('click', () => { $('#reteachModal').hidden = true; renderLesson(); });
 $('#openRewards').addEventListener('click', () => { renderRewards(); $('#rewardsModal').hidden = false; });
 $('#closeRewards').addEventListener('click', () => { $('#rewardsModal').hidden = true; });
-$('#resetProgress').addEventListener('click', () => { state.sparks = 0; state.started = []; state.completedConcepts = []; state.sectionRewards = {}; state.trophies = []; save(); $('#sparkCount').textContent = '0 sparks'; renderChapters(); });
 document.querySelectorAll('[data-vocab-view]').forEach(button => button.addEventListener('click', () => setVocabView(button.dataset.vocabView)));
 window.NumberQuestTestAPI = Object.freeze({
   course,
@@ -916,4 +915,4 @@ document.addEventListener('keydown', event => {
   schoolMenu.hidden = true;
   schoolButton.setAttribute('aria-expanded', 'false');
 });
-$('#sparkCount').textContent = `${state.sparks} sparks`; renderSubjectTabs(); renderGradeRail(); renderChapters();
+renderSubjectTabs(); renderGradeRail(); renderChapters();
