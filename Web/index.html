@@ -59,6 +59,12 @@
         </div>
       </section>
 
+      <div class="vocab-toggle" id="vocabToggleBar" role="group" aria-label="Choose vocabulary view" hidden>
+        <button class="vocab-toggle-btn active" type="button" data-vocab-view="words">Fancy Words</button>
+        <button class="vocab-toggle-btn" type="button" data-vocab-view="situations">Words for Situations</button>
+        <button class="vocab-toggle-btn" type="button" data-vocab-view="practice">Practice</button>
+      </div>
+
       <section class="chapter-section" id="chapterSection">
         <div class="section-heading"><div><p class="eyebrow">Choose a mission</p><h2 id="chapterHeading">Chapter map</h2></div><span id="chapterProgress" class="progress-note"></span></div>
         <div id="chapterGrid" class="chapter-grid"></div>
@@ -71,10 +77,6 @@
 
       <section class="vocab-section" id="vocabSection" aria-label="Fancy Words vocabulary" hidden>
         <div class="section-heading"><div><p class="eyebrow">Word power</p><h2 id="vocabHeading">Fancy Words</h2></div></div>
-        <div class="vocab-toggle" id="vocabToggle" role="group" aria-label="Choose vocabulary view">
-          <button class="vocab-toggle-btn active" type="button" data-vocab-view="words">Fancy Words</button>
-          <button class="vocab-toggle-btn" type="button" data-vocab-view="situations">Words for Situations</button>
-        </div>
         <div id="vocabWordsView" class="vocab-word-grid"></div>
         <div id="vocabSituationsView" class="vocab-situation-list" hidden></div>
       </section>

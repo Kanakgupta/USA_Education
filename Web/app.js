@@ -527,7 +527,9 @@ function renderStemCatalog() {
   $('#stemGrid').innerHTML = STEM_CATALOG.map(group => `<div class="ap-group"><h3 class="ap-group-title">${group.subject}</h3><ul class="ap-course-list">${group.courses.map(course => `<li class="ap-course-chip">${course}</li>`).join('')}</ul></div>`).join('');
 }
 function currentGradeRange() { return GRADE_RANGES[state.schoolLevel] || GRADE_RANGES.elementary; }
-const subjectContent = { math: course, ela: readingCourse, social: socialCourse };
+const VOCAB_GRADES = [4, 5];
+const vocabCourse = Object.fromEntries(VOCAB_GRADES.map(grade => [grade, { chapters: [['Fancy Words Practice', ['30-question practice quiz'], 'A mix of word-meaning questions from the Fancy Words list and questions about words used for the same thing in different everyday situations.']] }]));
+const subjectContent = { math: course, ela: readingCourse, social: socialCourse, vocab: vocabCourse };
 function subjectById(id) { return subjects.find(item => item.id === id); }
 function chaptersFor(subject, grade) { const content = subjectContent[subject]; return content && content[grade] ? content[grade].chapters : null; }
 function gradeLabel(grade) { return grade == null ? '' : grade === 'K' ? 'Kindergarten' : `Grade ${grade}`; }
@@ -535,7 +537,7 @@ function currentChapter() { return chaptersFor(state.subject, state.grade)[state
 function isReading() { return state.subject === 'ela'; }
 function isSocial() { return state.subject === 'social'; }
 function isVocab() { return state.subject === 'vocab'; }
-const VOCAB_GRADES = [4, 5];
+function isVocabPractice() { return isVocab() && vocabView === 'practice'; }
 function currentStory() { return isReading() ? currentChapter()[1][state.concept] : null; }
 function socialFacts() { return isSocial() ? currentChapter()[3] : []; }
 function currentConceptName() { return isReading() ? currentStory().title : isSocial() ? currentChapter()[0] : currentChapter()[1][state.concept]; }
@@ -584,7 +586,26 @@ function socialQuestionsFor(grade, chapterIndex) {
   ]);
 }
 function genericQuestions() { return missionQuestionsFor(state.grade, state.chapter, state.concept); }
-function currentQuestions() { return isReading() ? readingQuestionsFor(state.grade, state.chapter, state.concept) : isSocial() ? socialQuestionsFor(state.grade, state.chapter) : genericQuestions(); }
+function vocabPracticeQuestionsFor(grade) {
+  const words = FancyWords[`grade${grade}`] || [];
+  const situations = FancyWords.situations;
+  const wordQuestions = Array.from({ length: 20 }, (_, i) => {
+    const index = (i * 5) % words.length;
+    const entry = words[index];
+    const distractors = [13, 26, 39, 52].map(offset => words[(index + offset) % words.length].meaning).filter(meaning => meaning !== entry.meaning).slice(0, 3);
+    return { question: `What does the word "${entry.word}" mean?`, correct: entry.meaning, options: [entry.meaning, ...distractors], id: i, level: levelForIndex(i) };
+  });
+  const situationQuestions = Array.from({ length: 10 }, (_, i) => {
+    const index = (i * 2) % situations.length;
+    const entry = situations[index];
+    const alternates = entry.words.length > 1 ? entry.words.slice(1) : entry.words;
+    const answer = alternates[i % alternates.length].term;
+    const distractors = [3, 7, 11, 15].map(offset => situations[(index + offset) % situations.length].words[0].term).filter(term => term !== answer).slice(0, 3);
+    return { question: `People also use a different word for ${entry.situation.toLowerCase()} (besides "${entry.words[0].term}"). Which word is it?`, correct: answer, options: [answer, ...distractors], id: 20 + i, level: levelForIndex(20 + i) };
+  });
+  return [...wordQuestions, ...situationQuestions];
+}
+function currentQuestions() { return isReading() ? readingQuestionsFor(state.grade, state.chapter, state.concept) : isSocial() ? socialQuestionsFor(state.grade, state.chapter) : isVocabPractice() ? vocabPracticeQuestionsFor(state.grade) : genericQuestions(); }
 function currentQuestion() { return currentQuestions()[state.question]; }
 function completedConceptKey() { return `${state.subject}-${state.grade}-${state.chapter}-${state.concept}`; }
 function isConceptComplete(index) { return state.completedConcepts.includes(`${state.subject}-${state.grade}-${state.chapter}-${index}`); }
@@ -608,7 +629,7 @@ function renderSubjectTabs() {
   }).join('');
   document.querySelectorAll('[data-subject]').forEach(button => button.addEventListener('click', () => { if (button.disabled) return; selectSubject(button.dataset.subject); }));
 }
-function selectSubject(id) { if (!subjectHasContent(id, state.grade)) return; state.subject = id; resetToChapters(); renderSubjectTabs(); renderChapters(); }
+function selectSubject(id) { if (!subjectHasContent(id, state.grade)) return; state.subject = id; if (id === 'vocab') vocabView = 'words'; resetToChapters(); renderSubjectTabs(); renderChapters(); }
 function resetToChapters() { state.chapter = null; state.concept = null; $('#emptyState').hidden = false; $('#lessonView').hidden = true; }
 let vocabView = 'words';
 function renderVocabWords() {
@@ -618,23 +639,29 @@ function renderVocabWords() {
 function renderVocabSituations() {
   $('#vocabSituationsView').innerHTML = FancyWords.situations.map(entry => `<div class="situation-card"><h3>${entry.situation}</h3><p class="situation-context">${entry.context}</p><div class="situation-words">${entry.words.map(word => `<span class="situation-chip"><b>${word.term}</b>${word.note ? ' — ' + word.note : ''}</span>`).join('')}</div></div>`).join('');
 }
-function setVocabView(view) {
-  vocabView = view;
-  document.querySelectorAll('[data-vocab-view]').forEach(button => button.classList.toggle('active', button.dataset.vocabView === view));
-  $('#vocabWordsView').hidden = view !== 'words';
-  $('#vocabSituationsView').hidden = view !== 'situations';
+function renderVocabToggleBar() {
+  $('#vocabToggleBar').hidden = !isVocab();
+  document.querySelectorAll('[data-vocab-view]').forEach(button => button.classList.toggle('active', button.dataset.vocabView === vocabView));
 }
-function renderVocabSection() {
+function renderVocabBrowse() {
   $('#chapterSection').hidden = true;
   $('#playground').hidden = true;
   $('#vocabSection').hidden = false;
   $('#vocabHeading').textContent = `Fancy Words · Grade ${state.grade}`;
   renderVocabWords();
   renderVocabSituations();
-  setVocabView(vocabView);
+  $('#vocabWordsView').hidden = vocabView !== 'words';
+  $('#vocabSituationsView').hidden = vocabView !== 'situations';
+}
+function setVocabView(view) {
+  vocabView = view;
+  if (view === 'practice') resetToChapters();
+  renderVocabToggleBar();
+  renderChapters();
 }
 function renderChapters() {
-  if (isVocab()) { renderVocabSection(); return; }
+  renderVocabToggleBar();
+  if (isVocab() && vocabView !== 'practice') { $('#vocabSection').hidden = false; renderVocabBrowse(); return; }
   $('#vocabSection').hidden = true;
   $('#chapterSection').hidden = false;
   $('#playground').hidden = false;
@@ -789,15 +816,16 @@ const conceptCases = {
 };
 function casesForConcept(concept) { const cases = conceptCases[concept]; return cases ? `<div class="concept-cases"><p class="cases-heading">Explore every case</p><div class="case-grid">${cases.map(([title, text]) => `<div class="case-card"><b>${title}</b><span>${text}</span></div>`).join('')}</div></div>` : ''; }
 function startChapter(index) { state.chapter = index; state.concept = null; state.question = 0; state.attempts = 0; const key = `${state.subject}-${state.grade}-${index}`; if (!state.started.includes(key)) { state.started.push(key); save(); } $('#emptyState').hidden = true; $('#lessonView').hidden = false; renderConceptPicker(); renderChapters(); $('#playground').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-function renderConceptPicker() { const chapter = currentChapter(); const completed = chapter[1].filter((_, index) => isConceptComplete(index)).length; const earnedChapterCoin = chapterCoin(state.chapter); const intro = earnedChapterCoin ? `<span class="chapter-coin ${earnedChapterCoin.toLowerCase()}">${coinSymbols[earnedChapterCoin]} ${earnedChapterCoin} chapter coin earned</span>` : isReading() ? `Read all ${chapter[1].length} stories to complete this collection. ${completed} of ${chapter[1].length} stories complete.` : isSocial() ? `Read the detailed chapter lesson, then answer 20 questions. ${completed} of ${chapter[1].length} chapters complete.` : `Complete all three skill missions to finish this chapter. ${completed} of ${chapter[1].length} sections complete.`; const cards = chapter[1].map((concept,index) => { const coin = sectionCoin(index); const title = isReading() ? concept.title : isSocial() ? `${chapter[0]} Lesson` : concept; const subtitle = coin ? `${coin} coin earned - practice again` : isReading() ? 'Read story + 5 questions' : isSocial() ? 'Detailed lesson + 20 questions' : '20-question mission, easy to expert'; const thumbnail = isReading() ? readingVisualMarkup(concept, chapter[0], true) : ''; return `<button class="concept-choice ${coin ? 'section-complete' : ''}" data-start-concept="${index}">${thumbnail}<span>${coin ? coinSymbols[coin] : index + 1}</span><strong>${title}</strong><small>${subtitle}</small></button>`; }).join(''); $('#lessonView').innerHTML = `<section class="lesson-panel concept-picker ${isReading() ? 'reading-library' : ''}"><p class="chapter-label">Chapter ${state.chapter + 1}</p><h2>${chapter[0]}</h2><p class="lesson-copy">${intro}</p><div class="concept-choice-grid">${cards}</div></section>`; document.querySelectorAll('[data-start-concept]').forEach(button => button.addEventListener('click', () => { state.concept=Number(button.dataset.startConcept); state.question=0; state.attempts=0; state.answers={}; state.wrongChoices={}; renderLesson(); })); }
+function renderConceptPicker() { const chapter = currentChapter(); const completed = chapter[1].filter((_, index) => isConceptComplete(index)).length; const earnedChapterCoin = chapterCoin(state.chapter); const intro = earnedChapterCoin ? `<span class="chapter-coin ${earnedChapterCoin.toLowerCase()}">${coinSymbols[earnedChapterCoin]} ${earnedChapterCoin} chapter coin earned</span>` : isReading() ? `Read all ${chapter[1].length} stories to complete this collection. ${completed} of ${chapter[1].length} stories complete.` : isSocial() ? `Read the detailed chapter lesson, then answer 20 questions. ${completed} of ${chapter[1].length} chapters complete.` : isVocabPractice() ? `Answer 30 mixed questions about fancy words and everyday situation words. ${completed} of ${chapter[1].length} sections complete.` : `Complete all three skill missions to finish this chapter. ${completed} of ${chapter[1].length} sections complete.`; const cards = chapter[1].map((concept,index) => { const coin = sectionCoin(index); const title = isReading() ? concept.title : isSocial() ? `${chapter[0]} Lesson` : concept; const subtitle = coin ? `${coin} coin earned - practice again` : isReading() ? 'Read story + 5 questions' : isSocial() ? 'Detailed lesson + 20 questions' : isVocabPractice() ? '30-question mission, easy to expert' : '20-question mission, easy to expert'; const thumbnail = isReading() ? readingVisualMarkup(concept, chapter[0], true) : ''; return `<button class="concept-choice ${coin ? 'section-complete' : ''}" data-start-concept="${index}">${thumbnail}<span>${coin ? coinSymbols[coin] : index + 1}</span><strong>${title}</strong><small>${subtitle}</small></button>`; }).join(''); $('#lessonView').innerHTML = `<section class="lesson-panel concept-picker ${isReading() ? 'reading-library' : ''}"><p class="chapter-label">Chapter ${state.chapter + 1}</p><h2>${chapter[0]}</h2><p class="lesson-copy">${intro}</p><div class="concept-choice-grid">${cards}</div></section>`; document.querySelectorAll('[data-start-concept]').forEach(button => button.addEventListener('click', () => { state.concept=Number(button.dataset.startConcept); state.question=0; state.attempts=0; state.answers={}; state.wrongChoices={}; renderLesson(); })); }
 function placeValueVisual() { return `<div class="place-chart"><div class="chart-number">582,641</div><div class="chart-row"><b>Hundred-thousands</b><b>Ten-thousands</b><b>Thousands</b><b>Hundreds</b><b>Tens</b><b>Ones</b></div><div class="chart-row chart-values"><span>5<br><small>500,000</small></span><span class="focus">8<br><small>80,000</small></span><span>2<br><small>2,000</small></span><span>6<br><small>600</small></span><span>4<br><small>40</small></span><span>1<br><small>1</small></span></div></div>`; }
 function renderLesson() {
   state.processingAnswer = false;
   const chapter = currentChapter(), story = currentStory(), question = currentQuestion(), concept = currentConceptName(), complete = state.answers[state.question], completedQuestions = Object.keys(state.answers).length, missionTotal = currentQuestions().length, reading = isReading();
   const socialLesson = `<article class="social-lesson"><p class="reading-label">Chapter overview</p><p>${chapter[2]}</p><div class="social-facts">${socialFacts().map(([topic, detail, importance]) => `<section><h3>${topic}</h3><p>${detail}</p><p><strong>Why it matters:</strong> ${importance}.</p></section>`).join('')}</div></article>`;
-  const lesson = reading ? `${readingVisualMarkup(story, chapter[0])}<article class="reading-passage"><p class="reading-label">Read the story carefully</p>${story.passage.split('\n\n').map(paragraph => `<p>${paragraph}</p>`).join('')}</article>` : isSocial() ? socialLesson : state.grade === 4 && state.chapter === 0 && state.concept === 0 ? '<p class="lesson-copy"><strong>Place value tells us what a digit is worth because of where it sits.</strong> The digit 8 in 582,641 is not worth eight. It is in the ten-thousands place, so it is worth 80,000. Each step left is 10 times greater; each step right is 10 times smaller.</p>' + placeValueVisual() + '<p class="lesson-copy"><strong>Read it in chunks:</strong> 582,641 is five hundred eighty-two thousand, six hundred forty-one. Use the chart to name a digit, write a number, compare numbers, or build expanded form.</p>' + casesForConcept('Place value') : `${lessonForConcept(concept, chapter[2])}${visualForConcept(concept)}${casesForConcept(concept)}`;
-  const previousLabel = reading ? '← Previous story' : isSocial() ? '← Previous chapter' : '← Previous concept', nextLabel = reading ? 'Next story →' : isSocial() ? 'Next chapter →' : 'Next concept →', libraryLabel = reading ? '← All stories' : isSocial() ? '← All chapters' : '← All concepts', missionLabel = reading ? 'Reading comprehension' : isSocial() ? 'Social Studies lesson' : 'Concept mission', tip = reading ? 'Read the passage again and use details from the text to support your answer.' : isSocial() ? 'Review each bold concept and use the chapter details to support your answer.' : 'Use the model, then explain to yourself why the answer makes sense.';
-  $('#lessonView').innerHTML = `<div class="lesson-layout"><section class="lesson-panel"><p class="chapter-label">Chapter ${state.chapter + 1} · ${missionLabel}</p><div class="concept-mission-nav"><button class="text-button" id="backToConcepts">${libraryLabel}</button><span>${state.concept + 1} of ${chapter[1].length}</span></div><h2>${concept}</h2>${lesson}<p class="lesson-copy"><strong>Mission tip:</strong> ${tip}</p><div class="concept-arrows"><button class="primary-button muted-button" id="previousConcept" ${state.concept===0?'disabled':''}>${previousLabel}</button><button class="primary-button" id="nextConcept" ${state.concept===chapter[1].length-1?'disabled':''}>${nextLabel}</button></div></section><section class="question-panel"><div class="question-meta"><span>Question ${state.question + 1} of ${missionTotal}</span><span class="level-badge level-${question.level.toLowerCase()}">${question.level}</span><span class="attempt-dots">${[0, 1, 2].map(index => `<i class="${index < state.attempts ? 'used' : ''}"></i>`).join('')}</span></div><div class="section-progress"><strong>${completedQuestions} / ${missionTotal} completed</strong><span>${completedQuestions === missionTotal ? 'Section complete!' : 'Keep going - every question counts.'}</span></div><div class="question-nav">${currentQuestions().map((_,index) => `<button data-go="${index}" class="nav-dot ${index===state.question?'active':''} ${state.answers[index]?'done':''}" title="Question ${index + 1}">${index + 1}</button>`).join('')}</div><h2>${question.question}</h2>${answerMarkup(question, complete)}<p class="feedback" id="feedback">${complete ? 'Completed! Choose another question or continue your section.' : reading ? 'Choose the answer best supported by the passage.' : 'Choose the answer that makes the math story true.'}</p><div class="question-arrows"><button class="icon-button" id="previousQuestion" ${state.question===0?'disabled':''} title="Previous question">←</button><button class="icon-button" id="nextQuestion" ${state.question===missionTotal-1?'disabled':''} title="Next question">→</button></div></section></div>`;
+  const vocabPracticeLesson = `<p class="lesson-copy"><strong>How this quiz works:</strong> You will answer 30 questions. Some ask what a Fancy Word means, and some ask about a different word used for the same everyday thing, like a restroom, a couch, or a doctor.</p><p class="lesson-copy"><strong>Tip:</strong> Read each question carefully and think about the meaning of the word before you choose an answer.</p>`;
+  const lesson = reading ? `${readingVisualMarkup(story, chapter[0])}<article class="reading-passage"><p class="reading-label">Read the story carefully</p>${story.passage.split('\n\n').map(paragraph => `<p>${paragraph}</p>`).join('')}</article>` : isSocial() ? socialLesson : isVocabPractice() ? vocabPracticeLesson : state.subject === 'math' && state.grade === 4 && state.chapter === 0 && state.concept === 0 ? '<p class="lesson-copy"><strong>Place value tells us what a digit is worth because of where it sits.</strong> The digit 8 in 582,641 is not worth eight. It is in the ten-thousands place, so it is worth 80,000. Each step left is 10 times greater; each step right is 10 times smaller.</p>' + placeValueVisual() + '<p class="lesson-copy"><strong>Read it in chunks:</strong> 582,641 is five hundred eighty-two thousand, six hundred forty-one. Use the chart to name a digit, write a number, compare numbers, or build expanded form.</p>' + casesForConcept('Place value') : `${lessonForConcept(concept, chapter[2])}${visualForConcept(concept)}${casesForConcept(concept)}`;
+  const previousLabel = reading ? '← Previous story' : isSocial() ? '← Previous chapter' : '← Previous concept', nextLabel = reading ? 'Next story →' : isSocial() ? 'Next chapter →' : 'Next concept →', libraryLabel = reading ? '← All stories' : isSocial() ? '← All chapters' : '← All concepts', missionLabel = reading ? 'Reading comprehension' : isSocial() ? 'Social Studies lesson' : isVocabPractice() ? 'Fancy Words practice' : 'Concept mission', tip = reading ? 'Read the passage again and use details from the text to support your answer.' : isSocial() ? 'Review each bold concept and use the chapter details to support your answer.' : isVocabPractice() ? 'Think about what the word means, then choose the best answer.' : 'Use the model, then explain to yourself why the answer makes sense.';
+  $('#lessonView').innerHTML = `<div class="lesson-layout"><section class="lesson-panel"><p class="chapter-label">Chapter ${state.chapter + 1} · ${missionLabel}</p><div class="concept-mission-nav"><button class="text-button" id="backToConcepts">${libraryLabel}</button><span>${state.concept + 1} of ${chapter[1].length}</span></div><h2>${concept}</h2>${lesson}<p class="lesson-copy"><strong>Mission tip:</strong> ${tip}</p><div class="concept-arrows"><button class="primary-button muted-button" id="previousConcept" ${state.concept===0?'disabled':''}>${previousLabel}</button><button class="primary-button" id="nextConcept" ${state.concept===chapter[1].length-1?'disabled':''}>${nextLabel}</button></div></section><section class="question-panel"><div class="question-meta"><span>Question ${state.question + 1} of ${missionTotal}</span><span class="level-badge level-${question.level.toLowerCase()}">${question.level}</span><span class="attempt-dots">${[0, 1, 2].map(index => `<i class="${index < state.attempts ? 'used' : ''}"></i>`).join('')}</span></div><div class="section-progress"><strong>${completedQuestions} / ${missionTotal} completed</strong><span>${completedQuestions === missionTotal ? 'Section complete!' : 'Keep going - every question counts.'}</span></div><div class="question-nav">${currentQuestions().map((_,index) => `<button data-go="${index}" class="nav-dot ${index===state.question?'active':''} ${state.answers[index]?'done':''}" title="Question ${index + 1}">${index + 1}</button>`).join('')}</div><h2>${question.question}</h2>${answerMarkup(question, complete)}<p class="feedback" id="feedback">${complete ? 'Completed! Choose another question or continue your section.' : reading ? 'Choose the answer best supported by the passage.' : isVocabPractice() ? 'Choose the word or meaning that fits best.' : 'Choose the answer that makes the math story true.'}</p><div class="question-arrows"><button class="icon-button" id="previousQuestion" ${state.question===0?'disabled':''} title="Previous question">←</button><button class="icon-button" id="nextQuestion" ${state.question===missionTotal-1?'disabled':''} title="Next question">→</button></div></section></div>`;
   document.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => { state.question=Number(button.dataset.go); state.attempts=0; renderLesson(); }));
   $('#previousQuestion').addEventListener('click', () => { state.question--; state.attempts=0; renderLesson(); }); $('#nextQuestion').addEventListener('click', () => { state.question++; state.attempts=0; renderLesson(); });
   $('#backToConcepts').addEventListener('click', renderConceptPicker);
