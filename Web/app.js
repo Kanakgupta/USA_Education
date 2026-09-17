@@ -499,7 +499,7 @@ function save() { localStorage.setItem('numberQuestSparks', state.sparks); local
 const subjects = [
   { id: 'math', name: 'Mathematics', symbol: '∑', blurb: 'Numbers, shapes, and problem solving', grades: [4, 5] },
   { id: 'science', name: 'Science', symbol: '⚛', blurb: 'Investigate how the world works', grades: [] },
-  { id: 'ela', name: 'English', symbol: '✎', blurb: 'Stories, words, and clear ideas', grades: [4, 5] },
+  { id: 'ela', name: 'Reading & Writing', symbol: '✎', blurb: 'Stories, words, and clear ideas', grades: [4, 5] },
   { id: 'vocab', name: 'Fancy Words', symbol: '✦', blurb: 'Powerful words with meanings and examples', grades: [4, 5] },
   { id: 'social', name: 'Social Studies', symbol: '◍', blurb: 'People, places, regions, and history', grades: [4, 5] }
 ];
