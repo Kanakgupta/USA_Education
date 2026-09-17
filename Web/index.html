@@ -69,6 +69,16 @@
         <div id="lessonView" hidden></div>
       </section>
 
+      <section class="vocab-section" id="vocabSection" aria-label="Fancy Words vocabulary" hidden>
+        <div class="section-heading"><div><p class="eyebrow">Word power</p><h2 id="vocabHeading">Fancy Words</h2></div></div>
+        <div class="vocab-toggle" id="vocabToggle" role="group" aria-label="Choose vocabulary view">
+          <button class="vocab-toggle-btn active" type="button" data-vocab-view="words">Fancy Words</button>
+          <button class="vocab-toggle-btn" type="button" data-vocab-view="situations">Words for Situations</button>
+        </div>
+        <div id="vocabWordsView" class="vocab-word-grid"></div>
+        <div id="vocabSituationsView" class="vocab-situation-list" hidden></div>
+      </section>
+
       <section class="ap-section" id="apSection" aria-label="Advanced Placement course catalog" hidden>
         <div class="section-heading"><div><p class="eyebrow">High School</p><h2>AP Course Catalog</h2></div></div>
         <p class="ap-source">Advanced Placement subjects offered across Fremont Unified School District comprehensive high schools.</p>
@@ -96,6 +106,7 @@
   </div>
   <script src="reading-stories.js?v=grade5-reading-1"></script>
   <script src="social-studies.js"></script>
+  <script src="fancy-words.js"></script>
   <script src="app.js?v=curated-reading-images-4"></script>
 </body>
 </html>

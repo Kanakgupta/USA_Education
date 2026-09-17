@@ -499,7 +499,8 @@ function save() { localStorage.setItem('numberQuestSparks', state.sparks); local
 const subjects = [
   { id: 'math', name: 'Mathematics', symbol: '∑', blurb: 'Numbers, shapes, and problem solving', grades: [4, 5] },
   { id: 'science', name: 'Science', symbol: '⚛', blurb: 'Investigate how the world works', grades: [] },
-  { id: 'ela', name: 'Reading & Writing', symbol: '✎', blurb: 'Stories, words, and clear ideas', grades: [4, 5] },
+  { id: 'ela', name: 'English', symbol: '✎', blurb: 'Stories, words, and clear ideas', grades: [4, 5] },
+  { id: 'vocab', name: 'Fancy Words', symbol: '✦', blurb: 'Powerful words with meanings and examples', grades: [4, 5] },
   { id: 'social', name: 'Social Studies', symbol: '◍', blurb: 'People, places, regions, and history', grades: [4, 5] }
 ];
 const GRADE_RANGES = { elementary: [1, 2, 3, 4, 5], middle: [6, 7, 8] };
@@ -533,6 +534,8 @@ function gradeLabel(grade) { return grade == null ? '' : grade === 'K' ? 'Kinder
 function currentChapter() { return chaptersFor(state.subject, state.grade)[state.chapter]; }
 function isReading() { return state.subject === 'ela'; }
 function isSocial() { return state.subject === 'social'; }
+function isVocab() { return state.subject === 'vocab'; }
+const VOCAB_GRADES = [4, 5];
 function currentStory() { return isReading() ? currentChapter()[1][state.concept] : null; }
 function socialFacts() { return isSocial() ? currentChapter()[3] : []; }
 function currentConceptName() { return isReading() ? currentStory().title : isSocial() ? currentChapter()[0] : currentChapter()[1][state.concept]; }
@@ -586,7 +589,7 @@ function currentQuestion() { return currentQuestions()[state.question]; }
 function completedConceptKey() { return `${state.subject}-${state.grade}-${state.chapter}-${state.concept}`; }
 function isConceptComplete(index) { return state.completedConcepts.includes(`${state.subject}-${state.grade}-${state.chapter}-${index}`); }
 function answerMarkup(question, complete) { return `<div class="answer-list">${question.options.sort(() => Math.random() - .5).map(answer => `<button class="answer-button" data-answer="${answer}" ${complete ? 'disabled' : ''}>${answer}</button>`).join('')}</div>`; }
-function subjectHasContent(id, grade) { return !!chaptersFor(id, grade); }
+function subjectHasContent(id, grade) { if (id === 'vocab') return VOCAB_GRADES.includes(grade); return !!chaptersFor(id, grade); }
 function gradeHasContent(grade) { return subjects.some(subject => chaptersFor(subject.id, grade)); }
 function renderGradeRail() {
   $('#gradeRail').innerHTML = currentGradeRange().map(grade => { const active = gradeHasContent(grade); return `<button class="grade-chip ${grade === state.grade ? 'active' : ''} ${active ? '' : 'soon'}" data-grade="${grade}" ${active ? '' : 'disabled'}>${grade === 'K' ? 'K' : 'Gr ' + grade}</button>`; }).join('');
@@ -607,7 +610,34 @@ function renderSubjectTabs() {
 }
 function selectSubject(id) { if (!subjectHasContent(id, state.grade)) return; state.subject = id; resetToChapters(); renderSubjectTabs(); renderChapters(); }
 function resetToChapters() { state.chapter = null; state.concept = null; $('#emptyState').hidden = false; $('#lessonView').hidden = true; }
+let vocabView = 'words';
+function renderVocabWords() {
+  const words = FancyWords[`grade${state.grade}`] || [];
+  $('#vocabWordsView').innerHTML = words.map(entry => `<div class="vocab-card"><div class="vocab-word-row"><strong class="vocab-word">${entry.word}</strong><span class="vocab-pos">${entry.partOfSpeech}</span></div><p class="vocab-meaning">${entry.meaning}</p><ul class="vocab-examples">${entry.examples.map(example => `<li>${example}</li>`).join('')}</ul></div>`).join('');
+}
+function renderVocabSituations() {
+  $('#vocabSituationsView').innerHTML = FancyWords.situations.map(entry => `<div class="situation-card"><h3>${entry.situation}</h3><p class="situation-context">${entry.context}</p><div class="situation-words">${entry.words.map(word => `<span class="situation-chip"><b>${word.term}</b>${word.note ? ' — ' + word.note : ''}</span>`).join('')}</div></div>`).join('');
+}
+function setVocabView(view) {
+  vocabView = view;
+  document.querySelectorAll('[data-vocab-view]').forEach(button => button.classList.toggle('active', button.dataset.vocabView === view));
+  $('#vocabWordsView').hidden = view !== 'words';
+  $('#vocabSituationsView').hidden = view !== 'situations';
+}
+function renderVocabSection() {
+  $('#chapterSection').hidden = true;
+  $('#playground').hidden = true;
+  $('#vocabSection').hidden = false;
+  $('#vocabHeading').textContent = `Fancy Words · Grade ${state.grade}`;
+  renderVocabWords();
+  renderVocabSituations();
+  setVocabView(vocabView);
+}
 function renderChapters() {
+  if (isVocab()) { renderVocabSection(); return; }
+  $('#vocabSection').hidden = true;
+  $('#chapterSection').hidden = false;
+  $('#playground').hidden = false;
   const subject = subjectById(state.subject), chapters = chaptersFor(state.subject, state.grade), label = gradeLabel(state.grade);
   $('#chapterHeading').textContent = `${subject.name}${label ? ' · ' + label : ''}`;
   if (!chapters) {
@@ -803,6 +833,7 @@ $('#tryAgain').addEventListener('click', () => { $('#reteachModal').hidden = tru
 $('#openRewards').addEventListener('click', () => { renderRewards(); $('#rewardsModal').hidden = false; });
 $('#closeRewards').addEventListener('click', () => { $('#rewardsModal').hidden = true; });
 $('#resetProgress').addEventListener('click', () => { state.sparks = 0; state.started = []; state.completedConcepts = []; state.sectionRewards = {}; state.trophies = []; save(); $('#sparkCount').textContent = '0 sparks'; renderChapters(); });
+document.querySelectorAll('[data-vocab-view]').forEach(button => button.addEventListener('click', () => setVocabView(button.dataset.vocabView)));
 window.NumberQuestTestAPI = Object.freeze({
   course,
   readingCourse,
